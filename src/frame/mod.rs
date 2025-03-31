@@ -476,7 +476,7 @@ impl ExceptionCode {
         }
     }
 
-    pub(crate) fn description(&self) -> &str {
+    pub(crate) const fn description(&self) -> &str {
         use crate::frame::ExceptionCode::*;
 
         match *self {
@@ -523,13 +523,13 @@ pub(crate) struct ResponsePdu(pub(crate) Result<Response, ExceptionResponse>);
 
 impl From<Response> for ResponsePdu {
     fn from(from: Response) -> Self {
-        ResponsePdu(Ok(from))
+        Self(Ok(from))
     }
 }
 
 impl From<ExceptionResponse> for ResponsePdu {
     fn from(from: ExceptionResponse) -> Self {
-        ResponsePdu(Err(from))
+        Self(Err(from))
     }
 }
 

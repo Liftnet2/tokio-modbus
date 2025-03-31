@@ -22,19 +22,19 @@ impl Slave {
     /// 248-255 for broadcasting.
     #[must_use]
     pub const fn broadcast() -> Self {
-        Slave(0)
+        Self(0)
     }
 
     /// The minimum address of a single Modbus slave device.
     #[must_use]
     pub const fn min_device() -> Self {
-        Slave(1)
+        Self(1)
     }
 
     /// The maximum address of a single Modbus slave device.
     #[must_use]
     pub const fn max_device() -> Self {
-        Slave(247)
+        Self(247)
     }
 
     /// The reserved address for sending a message to a directly
@@ -46,7 +46,7 @@ impl Slave {
     /// the Modbus Unit Identifier is useless. The value 0xFF has to be used."
     #[must_use]
     pub const fn tcp_device() -> Self {
-        Slave(255)
+        Self(255)
     }
 
     /// Check if the [`SlaveId`] is used for broadcasting
@@ -70,7 +70,7 @@ impl Slave {
 
 impl From<SlaveId> for Slave {
     fn from(from: SlaveId) -> Self {
-        Slave(from)
+        Self(from)
     }
 }
 
@@ -86,15 +86,11 @@ impl FromStr for Slave {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let slave_id = match s.parse::<u8>() {
             Ok(slave_id) => Ok(slave_id),
-            Err(err) => {
-                if let Some(stripped) = s.strip_prefix("0x") {
-                    u8::from_str_radix(stripped, 16)
-                } else {
-                    Err(err)
-                }
-            }
+            Err(err) => s
+                .strip_prefix("0x")
+                .map_or(Err(err), |stripped| u8::from_str_radix(stripped, 16)),
         }?;
-        Ok(Slave(slave_id))
+        Ok(Self(slave_id))
     }
 }
 

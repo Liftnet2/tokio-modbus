@@ -450,7 +450,7 @@ impl TryFrom<Bytes> for ExceptionResponse {
         }
         let function = fn_err_code - 0x80;
         let exception = ExceptionCode::new(rdr.read_u8()?);
-        Ok(ExceptionResponse {
+        Ok(Self {
             function: FunctionCode::new(function),
             exception,
         })
@@ -472,7 +472,7 @@ impl TryFrom<Bytes> for ResponsePdu {
 }
 
 #[cfg(any(test, feature = "rtu", feature = "tcp"))]
-fn bool_to_coil(state: bool) -> u16 {
+const fn bool_to_coil(state: bool) -> u16 {
     if state {
         0xFF00
     } else {
@@ -489,7 +489,7 @@ fn coil_to_bool(coil: u16) -> io::Result<bool> {
 }
 
 #[cfg(any(test, feature = "rtu", feature = "tcp"))]
-fn packed_coils_size(coils: &[Coil]) -> usize {
+const fn packed_coils_size(coils: &[Coil]) -> usize {
     (coils.len() + 7) / 8
 }
 

@@ -22,36 +22,36 @@ all-features = true
 # <https://users.rust-lang.org/t/psa-please-specify-precise-dependency-versions-in-cargo-toml/71277>
 
 [dependencies]
-async-trait = "0.1.77"
-byteorder = "1.5.0"
-bytes = "1.5.0"
-futures-core = { version = "0.3.30", optional = true, default-features = false }
-futures-util = { version = "0.3.30", optional = true, default-features = false }
-log = "0.4.20"
-smallvec = { version = "1.13.1", optional = true, default-features = false }
-socket2 = { version = "0.5.5", optional = true, default-features = false }
-thiserror = "2.0.3"
-tokio = { version = "1.35.1", default-features = false, features = ["io-util"] }
+async-trait = "*"
+byteorder = "*"
+bytes = "*"
+futures-core = { version = "*", optional = true, default-features = false }
+futures-util = { version = "*", optional = true, default-features = false }
+log = "*"
+smallvec = { version = "*", optional = true, default-features = false }
+socket2 = { version = "*", optional = true, default-features = false }
+thiserror = "*"
+tokio = { version = "*", default-features = false, features = ["io-util"] }
 # Disable default-features to exclude unused dependency on libudev
-tokio-serial = { version = "5.4.4", optional = true, default-features = false }
-tokio-util = { version = "0.7.10", optional = true, default-features = false, features = ["codec"] }
+tokio-serial = { version = "*", optional = true, default-features = false }
+tokio-util = { version = "*", optional = true, default-features = false, features = ["codec"] }
 
 [dev-dependencies]
-anyhow = "1.0.86"
-env_logger = "0.11.5"
-futures = "0.3.30"
-tokio = { version = "1.35.1", default-features = false, features = [
+anyhow = "*"
+env_logger = "*"
+futures = "*"
+tokio = { version = "*", default-features = false, features = [
   "macros",
   "rt-multi-thread",
   "time",
 ] }
-tokio-serial = { version = "5.4.4", default-features = false }
-rustls-pemfile = "2.1.2"
-tokio-rustls = { version = "0.26.0", default-features = false }
-pkcs8 = { version = "0.10.2", features = ["encryption", "pem", "std"] }
-pem = "3.0.4"
-pki-types = { package = "rustls-pki-types", version = "1" }
-rustls = { version = "0.23.12", default-features = false, features = ["std"] }
+tokio-serial = { version = "*", default-features = false }
+rustls-pemfile = "*"
+tokio-rustls = { version = "*", default-features = false }
+pkcs8 = { version = "*", features = ["encryption", "pem", "std"] }
+pem = "*"
+pki-types = { package = "rustls-pki-types", version = "*" }
+rustls = { version = "*", default-features = false, features = ["std"] }
 
 [features]
 default = ["rtu", "tcp"]

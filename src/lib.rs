@@ -24,6 +24,7 @@
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::wildcard_imports)] // TODO
 #![allow(clippy::missing_errors_doc)] // TODO
+#![allow(clippy::redundant_pub_crate)]
 
 /// Re-export the `bytes` crate
 ///
