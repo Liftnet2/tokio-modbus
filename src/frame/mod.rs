@@ -166,7 +166,7 @@ pub(crate) type Word = u16;
 pub type Quantity = u16;
 
 /// A request represents a message from the client (master) to the server (slave).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Request<'a> {
     /// A request to read multiple coils.
     /// The first parameter is the address of the first coil to read.
@@ -318,7 +318,7 @@ impl SlaveRequest<'_> {
 /// multiple of 8. Only the values of the first bits/coils that have actually
 /// been requested are defined. The value of the remaining bits depend on the
 /// server implementation and those coils should be should be ignored.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Response {
     /// Response to a `ReadCoils` request
     /// The parameter contains the coil values that have been read
