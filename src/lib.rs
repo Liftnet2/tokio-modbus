@@ -1,6 +1,5 @@
 // SPDX-FileCopyrightText: Copyright (c) 2017-2025 slowtec GmbH <post@slowtec.de>
 // SPDX-License-Identifier: MIT OR Apache-2.0
-
 #![doc = include_str!("../README.md")]
 // Opt-in for allowed-by-default lints (in alphabetical order)
 // See also: <https://doc.rust-lang.org/rustc/lints>

@@ -65,27 +65,43 @@ pub trait Reader: Client {
 }
 
 /// Asynchronous Modbus writer
-#[async_trait]
+//#[async_trait]
 pub trait Writer: Client {
     /// Write a single coil (0x05)
-    async fn write_single_coil(&mut self, addr: Address, coil: Coil) -> Result<()>;
+    fn write_single_coil(
+        &mut self,
+        addr: Address,
+        coil: Coil,
+    ) -> impl std::future::Future<Output = Result<Response>> + Send;
 
     /// Write a single holding register (0x06)
-    async fn write_single_register(&mut self, addr: Address, word: Word) -> Result<()>;
+    fn write_single_register(
+        &mut self,
+        addr: Address,
+        word: Word,
+    ) -> impl std::future::Future<Output = Result<Response>> + Send;
 
     /// Write multiple coils (0x0F)
-    async fn write_multiple_coils(&mut self, addr: Address, coils: &'_ [Coil]) -> Result<()>;
+    fn write_multiple_coils(
+        &mut self,
+        addr: Address,
+        coils: &'_ [Coil],
+    ) -> impl std::future::Future<Output = Result<Response>> + Send;
 
     /// Write multiple holding registers (0x10)
-    async fn write_multiple_registers(&mut self, addr: Address, words: &[Word]) -> Result<()>;
+    fn write_multiple_registers(
+        &mut self,
+        addr: Address,
+        words: &[Word],
+    ) -> impl std::future::Future<Output = Result<Response>> + Send;
 
     /// Set or clear individual bits of a holding register (0x16)
-    async fn masked_write_register(
+    fn masked_write_register(
         &mut self,
         addr: Address,
         and_mask: Word,
         or_mask: Word,
-    ) -> Result<()>;
+    ) -> impl std::future::Future<Output = Result<Response>> + Send;
 }
 
 /// Asynchronous Modbus client context
@@ -226,9 +242,9 @@ impl Reader for Context {
     }
 }
 
-#[async_trait]
+//#[async_trait]
 impl Writer for Context {
-    async fn write_single_coil<'a>(&'a mut self, addr: Address, coil: Coil) -> Result<()> {
+    async fn write_single_coil(&mut self, addr: Address, coil: Coil) -> Result<Response> {
         self.client
             .call(Request::WriteSingleCoil(addr, coil))
             .await
@@ -237,13 +253,14 @@ impl Writer for Context {
                     Response::WriteSingleCoil(rsp_addr, rsp_coil) => {
                         debug_assert_eq!(addr, rsp_addr);
                         debug_assert_eq!(coil, rsp_coil);
+                        response
                     }
                     _ => unreachable!("call() should reject mismatching responses"),
                 })
             })
     }
 
-    async fn write_multiple_coils<'a>(&'a mut self, addr: Address, coils: &[Coil]) -> Result<()> {
+    async fn write_multiple_coils(&mut self, addr: Address, coils: &[Coil]) -> Result<Response> {
         let cnt = coils.len();
         self.client
             .call(Request::WriteMultipleCoils(addr, Cow::Borrowed(coils)))
@@ -253,13 +270,14 @@ impl Writer for Context {
                     Response::WriteMultipleCoils(rsp_addr, rsp_cnt) => {
                         debug_assert_eq!(addr, rsp_addr);
                         debug_assert_eq!(cnt, rsp_cnt.into());
+                        response
                     }
                     _ => unreachable!("call() should reject mismatching responses"),
                 })
             })
     }
 
-    async fn write_single_register<'a>(&'a mut self, addr: Address, word: Word) -> Result<()> {
+    async fn write_single_register(&mut self, addr: Address, word: Word) -> Result<Response> {
         self.client
             .call(Request::WriteSingleRegister(addr, word))
             .await
@@ -268,17 +286,14 @@ impl Writer for Context {
                     Response::WriteSingleRegister(rsp_addr, rsp_word) => {
                         debug_assert_eq!(addr, rsp_addr);
                         debug_assert_eq!(word, rsp_word);
+                        response
                     }
                     _ => unreachable!("call() should reject mismatching responses"),
                 })
             })
     }
 
-    async fn write_multiple_registers<'a>(
-        &'a mut self,
-        addr: Address,
-        data: &[Word],
-    ) -> Result<()> {
+    async fn write_multiple_registers(&mut self, addr: Address, data: &[Word]) -> Result<Response> {
         let cnt = data.len();
         self.client
             .call(Request::WriteMultipleRegisters(addr, Cow::Borrowed(data)))
@@ -288,18 +303,19 @@ impl Writer for Context {
                     Response::WriteMultipleRegisters(rsp_addr, rsp_cnt) => {
                         debug_assert_eq!(addr, rsp_addr);
                         debug_assert_eq!(cnt, rsp_cnt.into());
+                        response
                     }
                     _ => unreachable!("call() should reject mismatching responses"),
                 })
             })
     }
 
-    async fn masked_write_register<'a>(
-        &'a mut self,
+    async fn masked_write_register(
+        &mut self,
         addr: Address,
         and_mask: Word,
         or_mask: Word,
-    ) -> Result<()> {
+    ) -> Result<Response> {
         self.client
             .call(Request::MaskWriteRegister(addr, and_mask, or_mask))
             .await
@@ -309,6 +325,7 @@ impl Writer for Context {
                         debug_assert_eq!(addr, rsp_addr);
                         debug_assert_eq!(and_mask, rsp_and_mask);
                         debug_assert_eq!(or_mask, rsp_or_mask);
+                        response
                     }
                     _ => unreachable!("call() should reject mismatching responses"),
                 })

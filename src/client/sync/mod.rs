@@ -67,12 +67,16 @@ pub trait Reader: Client {
 ///
 /// The synchronous counterpart of the asynchronous [`Writer`](`crate::client::Writer`) trait.
 pub trait Writer: Client {
-    fn write_single_coil(&mut self, addr: Address, coil: Coil) -> Result<()>;
-    fn write_multiple_coils(&mut self, addr: Address, coils: &[Coil]) -> Result<()>;
-    fn write_single_register(&mut self, addr: Address, word: Word) -> Result<()>;
-    fn write_multiple_registers(&mut self, addr: Address, words: &[Word]) -> Result<()>;
-    fn masked_write_register(&mut self, addr: Address, and_mask: Word, or_mask: Word)
-        -> Result<()>;
+    fn write_single_coil(&mut self, addr: Address, coil: Coil) -> Result<Response>;
+    fn write_multiple_coils(&mut self, addr: Address, coils: &[Coil]) -> Result<Response>;
+    fn write_single_register(&mut self, addr: Address, word: Word) -> Result<Response>;
+    fn write_multiple_registers(&mut self, addr: Address, words: &[Word]) -> Result<Response>;
+    fn masked_write_register(
+        &mut self,
+        addr: Address,
+        and_mask: Word,
+        or_mask: Word,
+    ) -> Result<Response>;
 }
 
 /// A synchronous Modbus client context.
@@ -164,7 +168,7 @@ impl Reader for Context {
 }
 
 impl Writer for Context {
-    fn write_single_register(&mut self, addr: Address, data: Word) -> Result<()> {
+    fn write_single_register(&mut self, addr: Address, data: Word) -> Result<Response> {
         block_on_with_timeout(
             &self.runtime,
             self.timeout,
@@ -172,7 +176,7 @@ impl Writer for Context {
         )
     }
 
-    fn write_multiple_registers(&mut self, addr: Address, data: &[Word]) -> Result<()> {
+    fn write_multiple_registers(&mut self, addr: Address, data: &[Word]) -> Result<Response> {
         block_on_with_timeout(
             &self.runtime,
             self.timeout,
@@ -180,7 +184,7 @@ impl Writer for Context {
         )
     }
 
-    fn write_single_coil(&mut self, addr: Address, data: Coil) -> Result<()> {
+    fn write_single_coil(&mut self, addr: Address, data: Coil) -> Result<Response> {
         block_on_with_timeout(
             &self.runtime,
             self.timeout,
@@ -188,7 +192,7 @@ impl Writer for Context {
         )
     }
 
-    fn write_multiple_coils(&mut self, addr: Address, data: &[Coil]) -> Result<()> {
+    fn write_multiple_coils(&mut self, addr: Address, data: &[Coil]) -> Result<Response> {
         block_on_with_timeout(
             &self.runtime,
             self.timeout,
@@ -201,7 +205,7 @@ impl Writer for Context {
         addr: Address,
         and_mask: Word,
         or_mask: Word,
-    ) -> Result<()> {
+    ) -> Result<Response> {
         block_on_with_timeout(
             &self.runtime,
             self.timeout,
