@@ -1,11 +1,12 @@
 // SPDX-FileCopyrightText: Copyright (c) 2017-2025 slowtec GmbH <post@slowtec.de>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use std::{fmt, io};
+use std::{collections::HashMap, fmt, io};
 
 use futures_util::{SinkExt as _, StreamExt as _};
 use tokio::io::{AsyncRead, AsyncWrite};
 use tokio_util::codec::Framed;
+use tracing::instrument;
 
 use crate::{
     codec,
@@ -13,9 +14,8 @@ use crate::{
         tcp::{Header, RequestAdu, ResponseAdu, TransactionId, UnitId},
         RequestPdu, ResponsePdu,
     },
-    service::verify_response_header,
     slave::*,
-    ExceptionResponse, ProtocolError, Request, Response, Result,
+    ExceptionResponse, FunctionCode, ProtocolError, Request, Response, Result,
 };
 
 use super::disconnect;
@@ -43,15 +43,16 @@ impl TransactionIdGenerator {
 
 /// Modbus TCP client
 #[derive(Debug)]
-pub(crate) struct Client<T> {
+pub(crate) struct Client<T: core::fmt::Debug> {
     framed: Option<Framed<T, codec::tcp::ClientCodec>>,
     transaction_id_generator: TransactionIdGenerator,
+    trasction_response_map: HashMap<Header, FunctionCode>,
     unit_id: UnitId,
 }
 
 impl<T> Client<T>
 where
-    T: AsyncRead + AsyncWrite + Unpin,
+    T: AsyncRead + AsyncWrite + Unpin + core::fmt::Debug,
 {
     pub(crate) fn new(transport: T, slave: Slave) -> Self {
         let framed = Framed::new(transport, codec::tcp::ClientCodec::new());
@@ -61,6 +62,7 @@ where
             framed: Some(framed),
             transaction_id_generator,
             unit_id,
+            trasction_response_map: HashMap::with_capacity(10),
         }
     }
 
@@ -89,6 +91,7 @@ where
         Ok(framed)
     }
 
+    #[instrument]
     pub(crate) async fn call(&mut self, req: Request<'_>) -> Result<Response> {
         log::debug!("Call {req:?}");
 
@@ -102,23 +105,28 @@ where
         framed.send(req_adu).await?;
 
         let res_adu = framed.next().await.ok_or_else(io::Error::last_os_error)??;
+        self.trasction_response_map
+            .insert(req_hdr, req_function_code);
         let ResponseAdu {
             hdr: res_hdr,
             pdu: res_pdu,
         } = res_adu;
         let ResponsePdu(result) = res_pdu;
 
-        // Match headers of request and response.
-        if let Err(message) = verify_response_header(&req_hdr, &res_hdr) {
-            return Err(ProtocolError::HeaderMismatch { message, result }.into());
-        }
+        let Some(request_function_code) = self.trasction_response_map.remove(&res_hdr) else {
+            return Err(ProtocolError::HeaderMismatch {
+                message: format!("expected/request = {req_hdr:?}, actual/response = {res_hdr:?}"),
+                result,
+            }
+            .into());
+        };
 
         // Match function codes of request and response.
         let rsp_function_code = match &result {
             Ok(response) => response.function_code(),
             Err(ExceptionResponse { function, .. }) => *function,
         };
-        if req_function_code != rsp_function_code {
+        if request_function_code != rsp_function_code {
             return Err(ProtocolError::FunctionCodeMismatch {
                 request: req_function_code,
                 result,
@@ -143,7 +151,7 @@ where
     }
 }
 
-impl<T> SlaveContext for Client<T> {
+impl<T: core::fmt::Debug> SlaveContext for Client<T> {
     fn set_slave(&mut self, slave: Slave) {
         self.unit_id = slave.into();
     }
@@ -160,67 +168,5 @@ where
 
     async fn disconnect(&mut self) -> io::Result<()> {
         self.disconnect().await
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn validate_same_headers() {
-        // Given
-        let req_hdr = Header {
-            unit_id: 0,
-            transaction_id: 42,
-        };
-        let rsp_hdr = Header {
-            unit_id: 0,
-            transaction_id: 42,
-        };
-
-        // When
-        let result = verify_response_header(&req_hdr, &rsp_hdr);
-
-        // Then
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn invalid_validate_not_same_unit_id() {
-        // Given
-        let req_hdr = Header {
-            unit_id: 0,
-            transaction_id: 42,
-        };
-        let rsp_hdr = Header {
-            unit_id: 5,
-            transaction_id: 42,
-        };
-
-        // When
-        let result = verify_response_header(&req_hdr, &rsp_hdr);
-
-        // Then
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn invalid_validate_not_same_transaction_id() {
-        // Given
-        let req_hdr = Header {
-            unit_id: 0,
-            transaction_id: 42,
-        };
-        let rsp_hdr = Header {
-            unit_id: 0,
-            transaction_id: 86,
-        };
-
-        // When
-        let result = verify_response_header(&req_hdr, &rsp_hdr);
-
-        // Then
-        assert!(result.is_err());
     }
 }

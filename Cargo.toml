@@ -35,6 +35,7 @@ tokio = { version = "*", default-features = false, features = ["io-util"] }
 # Disable default-features to exclude unused dependency on libudev
 tokio-serial = { version = "*", optional = true, default-features = false }
 tokio-util = { version = "*", optional = true, default-features = false, features = ["codec"] }
+tracing = { version = "0.1.41", features = ["log"] }
 
 [dev-dependencies]
 anyhow = "*"

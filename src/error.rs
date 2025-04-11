@@ -22,7 +22,7 @@ pub enum Error {
 /// _Modbus_ protocol error.
 #[derive(Debug, Error)]
 pub enum ProtocolError {
-    /// The received response header doesn't match the request.
+    /// The received response header doesn't match any known request.
     ///
     /// The error message contains details about the mismatch.
     ///

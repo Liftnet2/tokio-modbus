@@ -6,7 +6,7 @@ use super::*;
 pub(crate) type TransactionId = u16;
 pub(crate) type UnitId = u8;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) struct Header {
     pub(crate) transaction_id: TransactionId,
     pub(crate) unit_id: UnitId,

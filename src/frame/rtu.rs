@@ -5,7 +5,7 @@ use super::*;
 
 use crate::slave::SlaveId;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub(crate) struct Header {
     pub(crate) slave_id: SlaveId,
 }

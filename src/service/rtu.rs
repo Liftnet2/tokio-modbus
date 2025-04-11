@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: Copyright (c) 2017-2025 slowtec GmbH <post@slowtec.de>
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use std::{fmt, io};
+use std::{collections::HashMap, fmt, io};
 
 use futures_util::{SinkExt as _, StreamExt as _};
 use tokio::io::{AsyncRead, AsyncWrite};
@@ -14,13 +14,14 @@ use crate::{
     ProtocolError, Result,
 };
 
-use super::{disconnect, verify_response_header};
+use super::disconnect;
 
 /// Modbus RTU client
 #[derive(Debug)]
 pub(crate) struct Client<T> {
     framed: Option<Framed<T, codec::rtu::ClientCodec>>,
     slave_id: SlaveId,
+    trasction_response_map: HashMap<Header, FunctionCode>,
 }
 
 impl<T> Client<T>
@@ -33,6 +34,7 @@ where
         Self {
             slave_id,
             framed: Some(framed),
+            trasction_response_map: HashMap::with_capacity(10),
         }
     }
 
@@ -69,23 +71,28 @@ where
             .next()
             .await
             .unwrap_or_else(|| Err(io::Error::from(io::ErrorKind::BrokenPipe)))?;
+        self.trasction_response_map
+            .insert(req_hdr, req_function_code);
         let ResponseAdu {
             hdr: res_hdr,
             pdu: res_pdu,
         } = res_adu;
         let ResponsePdu(result) = res_pdu;
 
-        // Match headers of request and response.
-        if let Err(message) = verify_response_header(&req_hdr, &res_hdr) {
-            return Err(ProtocolError::HeaderMismatch { message, result }.into());
-        }
+        let Some(request_function_code) = self.trasction_response_map.remove(&res_hdr) else {
+            return Err(ProtocolError::HeaderMismatch {
+                message: format!("expected/request = {req_hdr:?}, actual/response = {res_hdr:?}"),
+                result,
+            }
+            .into());
+        };
 
         // Match function codes of request and response.
         let rsp_function_code = match &result {
             Ok(response) => response.function_code(),
             Err(ExceptionResponse { function, .. }) => *function,
         };
-        if req_function_code != rsp_function_code {
+        if request_function_code != rsp_function_code {
             return Err(ProtocolError::FunctionCodeMismatch {
                 request: req_function_code,
                 result,
@@ -139,36 +146,7 @@ mod tests {
     };
     use tokio::io::{AsyncRead, AsyncWrite, ReadBuf, Result};
 
-    use crate::{
-        service::{rtu::Header, verify_response_header},
-        Error,
-    };
-
-    #[test]
-    fn validate_same_headers() {
-        // Given
-        let req_hdr = Header { slave_id: 0 };
-        let rsp_hdr = Header { slave_id: 0 };
-
-        // When
-        let result = verify_response_header(&req_hdr, &rsp_hdr);
-
-        // Then
-        assert!(result.is_ok());
-    }
-
-    #[test]
-    fn invalid_validate_not_same_slave_id() {
-        // Given
-        let req_hdr = Header { slave_id: 0 };
-        let rsp_hdr = Header { slave_id: 5 };
-
-        // When
-        let result = verify_response_header(&req_hdr, &rsp_hdr);
-
-        // Then
-        assert!(result.is_err());
-    }
+    use crate::Error;
 
     #[derive(Debug)]
     struct MockTransport;
