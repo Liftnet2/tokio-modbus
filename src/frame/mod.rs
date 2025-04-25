@@ -234,6 +234,17 @@ pub enum Request<'a> {
 
 impl Request<'_> {
     #[must_use]
+    pub const fn get_addr_quantity(&self) -> Option<(Address, Quantity)> {
+        match self {
+            Request::ReadCoils(addr, quantity)
+            | Request::ReadDiscreteInputs(addr, quantity)
+            | Request::ReadInputRegisters(addr, quantity)
+            | Request::ReadHoldingRegisters(addr, quantity) => Some((*addr, *quantity)),
+            | Request::ReadWriteMultipleRegisters(read_addr, read_quantity, _write_addr, _write_data) => Some((*read_addr, *read_quantity)),
+            _ => None,
+        }
+    }
+    #[must_use]
     pub const fn is_mergeable_read(&self) -> bool {
         matches!(
             self,
