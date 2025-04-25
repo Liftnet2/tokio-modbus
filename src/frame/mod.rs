@@ -168,7 +168,7 @@ pub(crate) type Word = u16;
 pub type Quantity = u16;
 
 /// A request represents a message from the client (master) to the server (slave).
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, PartialOrd, Ord)]
 pub enum Request<'a> {
     /// A request to read multiple coils.
     /// The first parameter is the address of the first coil to read.
@@ -233,6 +233,16 @@ pub enum Request<'a> {
 }
 
 impl Request<'_> {
+    #[must_use]
+    pub const fn is_mergeable_read(&self) -> bool {
+        matches!(
+            self,
+            Request::ReadCoils(_, _)
+                | Request::ReadDiscreteInputs(_, _)
+                | Request::ReadInputRegisters(_, _)
+                | Request::ReadHoldingRegisters(_, _)
+        )
+    }
     /// Converts the request into an owned instance with `'static'` lifetime.
     #[must_use]
     pub fn into_owned(self) -> Request<'static> {
