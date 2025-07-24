@@ -240,7 +240,12 @@ impl Request<'_> {
             | Request::ReadDiscreteInputs(addr, quantity)
             | Request::ReadInputRegisters(addr, quantity)
             | Request::ReadHoldingRegisters(addr, quantity) => Some((*addr, *quantity)),
-            | Request::ReadWriteMultipleRegisters(read_addr, read_quantity, _write_addr, _write_data) => Some((*read_addr, *read_quantity)),
+            Request::ReadWriteMultipleRegisters(
+                read_addr,
+                read_quantity,
+                _write_addr,
+                _write_data,
+            ) => Some((*read_addr, *read_quantity)),
             _ => None,
         }
     }
