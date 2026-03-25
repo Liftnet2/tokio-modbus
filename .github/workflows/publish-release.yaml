@@ -16,7 +16,7 @@ on:
 
 jobs:
   run:
-    runs-on: ubuntu-latest-8-cores
+    runs-on: Pilot_Linux
 
     steps:
       - uses: dtolnay/rust-toolchain@stable
