@@ -28,4 +28,4 @@ jobs:
       - name: Publish release on crates.io
         env:
           API_TOKEN: ${{ secrets.CRATES_IO_PUBLISH_UPDATE_TOKEN }}
-        run: cargo publish --token ${API_TOKEN}
+        run: cargo publish --token "${API_TOKEN}"
