@@ -22,6 +22,7 @@ env:
 
 jobs:
   run:
+    name: unit-tests-${{ matrix.target }}
     strategy:
       matrix:
         include:
