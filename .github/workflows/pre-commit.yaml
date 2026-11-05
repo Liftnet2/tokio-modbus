@@ -20,7 +20,10 @@ env:
 
 jobs:
   run:
-    runs-on: Pilot_Linux
+    name: lint
+    # GitHub-hosted: the self-hosted Pilot_Linux runner does not serve this public
+    # repository, so this job never got a runner there.
+    runs-on: ubuntu-latest
 
     steps:
       - name: Setup Python

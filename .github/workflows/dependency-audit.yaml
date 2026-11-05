@@ -19,6 +19,7 @@ on:
 
 jobs:
   run:
+    name: dependency-audit
     runs-on: Pilot_Linux
 
     steps:
